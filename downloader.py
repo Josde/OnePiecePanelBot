@@ -33,7 +33,7 @@ async def async_parsing():
                 try:
                     print('{0} threads active.'.format(semaphore._value))
                     downloadChapter(link, chapter_number)
-                    #executor.submit(downloadChapter, link, chapter_number)
+                    executor.submit(downloadChapter, link, chapter_number)
                     print('Launched thread {0} for chapter {1}'.format(semaphore._value, str(chapter_number)))
 
                 except Exception:
@@ -46,8 +46,10 @@ async def async_parsing():
 def downloadChapter(link, chapter_number):
     semaphore.acquire(blocking=True)
     chapter_dir = RESOURCE_PATH.joinpath(chapter_number)
-    if not chapter_dir.is_dir():
-        chapter_dir.mkdir()
+    if chapter_dir.is_dir():
+        semaphore.release()
+        return # do not download already downloadad chapters
+    chapter_dir.mkdir()
     sourceChapter = requests.get(link).text
     index = 1
     soup = BeautifulSoup(sourceChapter, 'html.parser')
