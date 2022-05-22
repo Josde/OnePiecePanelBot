@@ -6,7 +6,7 @@ from pathlib import Path
 import random
 load_dotenv()
 
-RESOURCE_PATH = Path.cwd().joinpath("res")
+RESOURCE_PATH = Path(os.path.dirname(__file__)).joinpath("res")
 api_key = os.getenv('API_KEY')
 api_secret = os.getenv('API_KEY_SECRET')
 access_token = os.getenv("ACCESS_TOKEN")

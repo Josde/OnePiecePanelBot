@@ -1,6 +1,6 @@
 import os
 from pathlib import Path
-RESOURCE_PATH = Path.cwd().joinpath("res")
+RESOURCE_PATH = Path(os.path.dirname(__file__)).joinpath("res")
 def rename():
     for dir in os.listdir(RESOURCE_PATH):
         chapter_path = RESOURCE_PATH.joinpath(str(dir.title()))

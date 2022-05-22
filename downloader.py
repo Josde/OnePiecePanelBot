@@ -1,3 +1,4 @@
+import os
 import traceback
 
 from bs4 import BeautifulSoup
@@ -10,17 +11,16 @@ import requests
 from time import sleep
 import subprocess
 import concurrent.futures
+import argparse
 BASE_PATH = 'https://onepiecechapters.com'
-RESOURCE_PATH = Path.cwd().joinpath("res")
-MAX_THREADS = 32
-semaphore = threading.BoundedSemaphore(MAX_THREADS)
-async def async_parsing():
-    headers = {
-        'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/100.0.4896.127 Safari/537.36',
-        'Accept-Encoding': 'GZIP'}
-    timeout = aiohttp.ClientTimeout(total=10)
+RESOURCE_PATH = Path(os.path.dirname(__file__)).joinpath("res")
+MAX_THREADS = 8 #default if not specified
+MIN_CHAPTER = 1
+MAX_CHAPTER = 10000 #just in case we dont get any arguments passed, this doesnt matter because chapter numbers dont go this high
+semaphore = None
+async def async_parsing(fromChapter, toChapter, threads, redl):
     link_list = []
-    executor = concurrent.futures.ThreadPoolExecutor(max_workers=32)
+    executor = concurrent.futures.ThreadPoolExecutor(max_workers=threads)
     sourceList = requests.get('https://onepiecechapters.com/mangas/5/one-piece').text
     try:
         soup = BeautifulSoup(sourceList, 'html.parser')
@@ -29,12 +29,12 @@ async def async_parsing():
         for link in link_list:
             print('Parsing ' + link)
             chapter_number = link.split('-')[-1]
-            if int(chapter_number) < 3:
+            if int(chapter_number) >= fromChapter and int(chapter_number) <= toChapter:
                 try:
                     print('{0} threads active.'.format(semaphore._value))
-                    downloadChapter(link, chapter_number)
+                    downloadChapter(link, chapter_number, redl)
                     executor.submit(downloadChapter, link, chapter_number)
-                    print('Launched thread {0} for chapter {1}'.format(semaphore._value, str(chapter_number)))
+                    print('Launched thread {0} for chapter {1}'.format(int(semaphore._value), str(chapter_number)))
 
                 except Exception:
                     traceback.print_exc()
@@ -43,11 +43,12 @@ async def async_parsing():
     finally:
         executor.shutdown()
 
-def downloadChapter(link, chapter_number):
+def downloadChapter(link, chapter_number, redownload):
     semaphore.acquire(blocking=True)
     chapter_dir = RESOURCE_PATH.joinpath(chapter_number)
-    if chapter_dir.is_dir():
+    if chapter_dir.is_dir() and not redownload:
         semaphore.release()
+        print('Chapter {0} was already downloaded, ignoring'.format(chapter_number))
         return # do not download already downloadad chapters
     chapter_dir.mkdir()
     sourceChapter = requests.get(link).text
@@ -66,5 +67,25 @@ def downloadChapter(link, chapter_number):
     semaphore.release()
 
 if __name__ == '__main__':
+    parser = argparse.ArgumentParser(description='Downloads all one piece chapter, or chapters in the range specified by min and max parameters')
+    parser.add_argument('-min', type=int, help='The earlist chapter from which you want to start downloading (default: 1)',
+                        default=MIN_CHAPTER,
+                        required=False)
+    parser.add_argument('-max', type=int,
+                        help='The latest chapter which you want to download (default: 10000)',
+                        default=MAX_CHAPTER,
+                        required=False)
+    parser.add_argument('-redl', type=bool,
+                        help='Should chapters which are already downloaded be redownloaded? (default: False)',
+                        default=False,
+                        required=False)
+    parser.add_argument('-threads', type=int,
+                        help='Number of threads to use for downloading (default: 8)',
+                        default=MAX_THREADS,
+                        required=False)
+    args = parser.parse_args()
+    if not RESOURCE_PATH.is_dir():
+        RESOURCE_PATH.mkdir()
+    semaphore = threading.BoundedSemaphore(args.threads)
     loop = asyncio.get_event_loop()
-    loop.run_until_complete(async_parsing())
+    loop.run_until_complete(async_parsing(args.min, args.max, args.threads, args.redl))
