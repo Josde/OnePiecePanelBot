@@ -17,7 +17,7 @@
   - ACCESS_TOKEN
   - ACCESS_TOKEN_SECRET
 - Set up a cron job to tweet out random panels at whichever pace you want!
-- Set up a cron job to periodically download new chapters! Please do not use \-redl on this job, to prevent excessive load on TCBScans' servers
+- Set up a cron job to periodically download new chapters! **DO NOT USE \-redl** on this job, to prevent excessive load on TCBScans' servers
 
 ## Troubleshooting
 
@@ -26,3 +26,8 @@
 ## Sample
 
 Currently running at https://twitter.com/OPPages!
+
+## Known bugs
+
+- Chapters with a v2, or v3 release will be downloaded in the wrong folder.
+  - For the time being, this only happens with chapter 1027, which will be downloaded into chapter 2.
