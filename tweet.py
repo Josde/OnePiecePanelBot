@@ -12,7 +12,6 @@ api_secret = os.getenv('API_KEY_SECRET')
 access_token = os.getenv("ACCESS_TOKEN")
 access_token_secret = os.getenv('ACCESS_TOKEN_SECRET')
 
-
 auth = tweepy.OAuth1UserHandler(
     api_key, api_secret,
     access_token, access_token_secret
@@ -54,8 +53,11 @@ arc_start= {
     909: 'Wano Country',
 }
 
+
 def tweet():
-    chapter = random.choice(os.listdir(RESOURCE_PATH))
+    # Use system random to prevent tweeting the same image if the tweet goes up at the same time.
+    # If HW random is not available, delete the SystemRandom() part.
+    chapter = random.SystemRandom().choice(os.listdir(RESOURCE_PATH))
     chapter_dir = RESOURCE_PATH / chapter
     page = random.choice(os.listdir(chapter_dir))
     page_file = chapter_dir.joinpath(page)
