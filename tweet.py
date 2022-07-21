@@ -1,11 +1,12 @@
 import os
-
+import logging
 import tweepy
 from dotenv import load_dotenv
 from pathlib import Path
 import random
 load_dotenv()
-
+logging.basicConfig(filename='tweet.log', format='%(asctime)s.%(msecs)03d %(levelname)s %(module)s - %(funcName)s: %(message)s',
+                    datefmt='%Y-%m-%d %H:%M:%S')
 RESOURCE_PATH = Path(os.path.dirname(__file__)).joinpath("res")
 api_key = os.getenv('API_KEY')
 api_secret = os.getenv('API_KEY_SECRET')
@@ -53,31 +54,57 @@ arc_start= {
     909: 'Wano Country',
 }
 
+def get_next_page(chapter_number, page_number):
+    image_path = page_to_file(chapter_number, page_number + 1)
+    if image_path.exists():
+        return chapter_number, page_number + 1, image_path
+    image_path = page_to_file(chapter_number + 1, 1)
+    if (image_path.exists()):
+        return chapter_number + 1, 1, image_path
+    else: # We got to the last page!
+        return None, None, None
+    
+def page_to_file(chapter_number, page_number):
+    chapter_dir = RESOURCE_PATH / str(chapter_number)
+    image_path = chapter_dir / (str(page_number) + ".png")
+    return image_path
 
+def write_page(chapter_number, page_number):
+    with open('current_page', 'w+') as f:
+        f.write('{0} {1}'.format(chapter_number, page_number))
+        
+def get_current_page():
+    with open('current_page', 'r') as f:
+        content = f.readline()
+        chapter_number, page_number = content.split(" ")
+        return int(chapter_number), int(page_number)
+    
 def tweet():
     # Use system random to prevent tweeting the same image if the tweet goes up at the same time.
     # If HW random is not available, delete the SystemRandom() part.
-    chapter = random.SystemRandom().choice(os.listdir(RESOURCE_PATH))
-    chapter_dir = RESOURCE_PATH / chapter
-    page = random.choice(os.listdir(chapter_dir))
-    page_file = chapter_dir.joinpath(page)
+    chapter_number, page_number = get_current_page()    
+    chapter_number, page_number, page_path = get_next_page(chapter_number, page_number)
+    if (page_path is not None):
+        is_bigger_than_last = True
+        for key in arc_start.keys():
+            if int(chapter_number) >= key:
+                last_key = key
+                is_bigger_than_last = True
+            elif int(chapter_number) < key and is_bigger_than_last:
+                arc = arc_start[last_key]
+                break
+            else:
+                arc = arc_start[list(arc_start.keys())[-1]]
 
-    #get arc
-    is_bigger_than_last = True
-    for key in arc_start.keys():
-        if int(chapter) >= key:
-            last_key = key
-            is_bigger_than_last = True
-        elif int(chapter) < key and is_bigger_than_last:
-            arc = arc_start[last_key]
-            break
-        else:
-            arc = arc_start[list(arc_start.keys())[-1]]
+        tweet_string = 'Chapter {0}: Page {1} ({2})'.format(chapter_number, page_number, arc)
+        try:
+            image = api.media_upload(filename=page_path)
+            api.update_status(status=tweet_string, media_ids=[image.media_id_string])
+            write_page(chapter_number, page_number)
+        except Exception as e:
+            logging.error('Exception when uploading tweet: {0}'.format(type(e).__name__))
 
-    tweet_string = 'Chapter {0}: Page {1} ({2})'.format(chapter, page[:-4], arc)
-    image = api.media_upload(filename=page_file)
-    api.update_status(status=tweet_string, media_ids=[image.media_id_string])
-
+    
 
 if __name__ == '__main__':
     tweet()
