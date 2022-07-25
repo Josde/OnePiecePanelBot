@@ -29,6 +29,8 @@ async def async_parsing(fromChapter, toChapter, threads, redl):
         for link in link_list:
             print('Parsing ' + link)
             chapter_number = link.split('-')[-1]
+            if ('.' in chapter_number): 
+                continue #FIXME: Lazy hack to ignore Road to Laugh Tale for now, fix later
             if int(chapter_number) >= fromChapter and int(chapter_number) <= toChapter:
                 try:
                     print('{0} threads active.'.format(semaphore._value))
@@ -50,7 +52,8 @@ def downloadChapter(link, chapter_number, redownload):
         semaphore.release()
         print('Chapter {0} was already downloaded, ignoring'.format(chapter_number))
         return # do not download already downloadad chapters
-    chapter_dir.mkdir()
+    if not chapter_dir.exists(): 
+        chapter_dir.mkdir()
     sourceChapter = requests.get(link).text
     index = 1
     soup = BeautifulSoup(sourceChapter, 'html.parser')
@@ -58,6 +61,8 @@ def downloadChapter(link, chapter_number, redownload):
     for picture in picture_div.findAll('picture'):
         file_name = str(index) + '.png'
         file_path = chapter_dir / file_name
+        if (file_path.exists()): 
+            os.remove(file_path)
         image = picture.find('img')
         print('Downloading chapter {0} page {1}'.format(chapter_number, index))
         index += 1
