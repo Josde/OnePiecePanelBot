@@ -84,7 +84,7 @@ def tweet():
     # If HW random is not available, delete the SystemRandom() part.
     chapter_number, page_number = get_current_page()    
     chapter_number, page_number, page_path = get_next_page(chapter_number, page_number)
-    if (page_path is not None):
+    if (page_path is not None and page_path.exists() and page_path.is_file()):
         is_bigger_than_last = True
         for key in arc_start.keys():
             if int(chapter_number) >= key:
@@ -103,6 +103,8 @@ def tweet():
             write_page(chapter_number, page_number)
         except Exception as e:
             logging.error('Exception when uploading tweet: {0}'.format(type(e).__name__))
+    else:
+        logging.error('File path {0} not found while searching for C{1}-P{2}'.format(page_path, chapter_number, page_number))
 
     
 
