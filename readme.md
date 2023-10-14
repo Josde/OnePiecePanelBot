@@ -32,7 +32,8 @@ After the Twitter API changes introduced by Elon Musk, this doesn't work anymore
 ## Sample
 
 Used to run at https://twitter.com/OPPages
-![Uploading image.png…]()
+![image](https://github.com/Josde/OnePiecePanelBot/assets/3825181/8a5491ef-3b25-4f42-a47d-74fce6448726)
+
 
 
 ## Known bugs
