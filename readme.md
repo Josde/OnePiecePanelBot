@@ -1,4 +1,10 @@
 # OPPanelBot
+OPPanelBot is code for:
+- Scraping the entirety of the One Piece manga from TCBScans, page by page.
+- Cleaning up these releases
+- And finally, **tweeting every single page in order.**
+
+After the Twitter API changes introduced by Elon Musk, this doesn't work anymore.
 ## Installation
 - Clone this repository  
 - Run ``python -m pip install -r requirements.txt``
@@ -25,7 +31,9 @@
 
 ## Sample
 
-Currently running at https://twitter.com/OPPages!
+Used to run at https://twitter.com/OPPages
+![Uploading image.png…]()
+
 
 ## Known bugs
 
